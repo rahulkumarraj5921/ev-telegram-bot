@@ -2,32 +2,27 @@ import os
 import re
 import base64
 import threading
+import json
 from flask import Flask
 from openai import AsyncOpenAI
 from telegram import Update, constants
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# ⚠️ Render Environment Variables se keys fetch hongi
+# --- CONFIGURATION ---
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")  
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY") 
 
-# Check agar keys set nahi hain toh warning print kare
-if not TELEGRAM_BOT_TOKEN or not OPENROUTER_API_KEY:
-    print("⚠️ WARNING: TELEGRAM_BOT_TOKEN ya OPENROUTER_API_KEY Render Environment Variables me set nahi hai!")
-
-# --- FLASK SERVER SETUP FOR RENDER ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "EV Tech Bot is running flawlessly on Render!"
+    return "EV Tech Bot (Pro Version) is Live!"
 
 def run_web_server():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
-# -------------------------------------
 
-# OpenRouter Client Setup
+# OpenRouter Setup
 client = AsyncOpenAI(
     api_key=OPENROUTER_API_KEY,
     base_url="https://openrouter.ai/api/v1",
@@ -37,26 +32,28 @@ client = AsyncOpenAI(
     }
 )
 
+# In-memory storage (Note: Render restart par ye clear ho jayega)
 user_sessions = {}
+user_memories = {} # Data yaad rakhne ke liye
 
-# 🧠 ADVANCED SYSTEM INSTRUCTIONS (For Diploma Engineers)
+# 🧠 ULTIMATE TECHNICAL SYSTEM PROMPT
 system_instruction = """
-Your Role: You are an Elite Technical Professor and Industry Expert specializing in Electric Vehicles and core engineering.
-Creator/Identity Rule: Agar koi aapse puche ki "tumhe kisne banaya hai", "tumhare developer kaun hain", ya "tumhara baap kaun hai", toh hamesha garv se yahi reply dena: "मुझे Rahul Kumar Raj (Government Polytechnic Nawada) ने बनाया है!"
+Your Role: Senior EV Research Scientist & Technical Professor.
+Creator: Rahul Kumar Raj (Government Polytechnic Nawada).
 
-Target Audience: Diploma Engineering Students who need practical, exam-oriented, and industry-ready knowledge.
+TARGET: Diploma Engineering Students.
 
-YOUR STRICT RULES FOR ANSWERING:
-1. LANGUAGE (HINGLISH): Explanation bilkul aasan Hindi-English mix (Hinglish) me honi chahiye. Lekin saare TECHNICAL TERMS, Definitions, aur Components ke naam pure English me hone chahiye.
-2. TECHNICAL DEPTH & UNIQUENESS: Kitabi baaton ke bajaye 'Industrial Application' par focus karein. Explain karein ki "Ye component EV me kahan aur kyun use hota hai".
-3. STRUCTURE: Answers ko in headings me divide karein (if applicable):
-   - 🎯 Concept (Brief intro)
-   - ⚙️ Working/Technical Details (Bullet points)
-   - 🏭 Industrial Application (Real-world use case)
-   - 📝 Quick Formula/Key Point (For exams)
-4. EQUATIONS: NEVER use LaTeX. Write all formulas in simple, plain text format (e.g., Efficiency = (P_out / P_in) * 100). Use standard Unicode characters (Ω, η, Δ).
-5. MULTIMODAL: Analyze uploaded diagrams like a senior engineer. Pinpoint specific flaws, circuit issues, or component functions accurately.
-6. TONE: Professional, encouraging, aur strictly point-to-point. Faltu ki lambi baatein na karein.
+STRICT RESPONSE RULES:
+1. NO REPETITION: Har answer pichle answer se alag aur unique hona chahiye. Do not use the same introductory sentences.
+2. EXTREME DETAIL: Sirf definition nahi, balki:
+   - 🎯 Concept Explanation (Hinglish)
+   - ⚙️ Technical Specs & Components (English)
+   - 📉 Pros & Cons (Bullet points)
+   - 🔄 Comparison (e.g., BLDC vs PMSM)
+   - 💡 Industry Pro-Tip (Placement point of view se)
+3. MEMORY UTILIZATION: Agar user ne kuch yaad rakhne ko kaha hai, toh apne answers ko us data ke hisab se personalize karein.
+4. TECHNICAL TERMS: Hamesha English terms use karein (e.g., 'Braking' instead of 'Rukna').
+5. NO LATEX: Use plain text for math (e.g., Torque = Force x Radius).
 """
 
 # --- Helper Functions ---
@@ -67,128 +64,110 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-# 🎓 PREMIUM WELCOME MESSAGE 
+# 🎓 START COMMAND
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    welcome_text = (
-        "🎓 **EV-Tech Scholar Bot में आपका स्वागत है!** ⚙️🔋\n\n"
-        "नमस्ते Engineer! यह AI Assistant खास तौर पर Government Polytechnic Nawada के छात्रों और सभी Diploma Engineers के लिए बनाया गया है। 🚀\n\n"
-        "Placement की टेंशन हो या Semester Exams की, Electric Vehicles के हर concept को अब हम मिलकर आसान बनाएंगे।\n\n"
-        "**🛠️ मैं आपकी कैसे मदद कर सकता हूँ?**\n"
-        "👉 **Deep Tech:** Thermodynamics, Motors और BMS की वर्किंग।\n"
-        "👉 **Diagram Scan:** किसी भी circuit या पार्ट की फोटो भेजें और तुरंत analysis पाएं।\n"
-        "👉 **Career Prep:** टॉप EV कंपनियों के इंटरव्यू सवाल।\n\n"
-        "👨‍💻 **Developer:** Rahul Kumar Raj (Government Polytechnic Nawada)\n\n"
-        "📚 *अपना सवाल नीचे लिखें या फोटो भेजें, और चलिए पढ़ाई शुरू करते हैं!*\n"
-        "*(Memory clear करने के लिए किसी भी समय /clear टाइप करें)*"
+    welcome = (
+        "🚀 **EV-Tech Scholar Bot PRO v2.0** ⚙️\n\n"
+        "नमस्ते Engineer! मैं अब पहले से ज़्यादा Detailed और Intelligent हूँ।\n\n"
+        "**🌟 नए फीचर्स:**\n"
+        "1. **Deep Analysis:** अब हर टॉपिक पर आपको गहरी जानकारी मिलेगी।\n"
+        "2. **Memory:** मुझे कुछ भी याद रखने को कहें (जैसे: 'याद रखो मेरा नाम राहुल है') और मैं उसे भूलूंगा नहीं।\n"
+        "3. **Interview Prep:** कंपनियों के हिसाब से technical answers।\n\n"
+        "👨‍💻 **Dev:** Rahul Kumar Raj\n"
+        "*(Memory clear करने के लिए /clear टाइप करें)*"
     )
-    
-    try:
-        await update.message.reply_text(welcome_text, parse_mode='Markdown')
-    except Exception:
-        await update.message.reply_text(welcome_text) # Fallback if markdown fails
+    await update.message.reply_text(welcome, parse_mode='Markdown')
 
-# Memory clear karne ke liye command
+# 🧹 CLEAR MEMORY
 async def clear_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    if chat_id in user_sessions:
-        del user_sessions[chat_id]
-    await update.message.reply_text("🧹 Session memory clear कर दी गई है! चलिए कोई नया टॉपिक शुरू करते हैं।")
+    user_sessions[chat_id] = []
+    user_memories[chat_id] = ""
+    await update.message.reply_text("🧹 Sab kuch clear kar diya gaya hai! Main sab bhool gaya hoon.")
 
-# Message handler logic
+# 🛠️ MESSAGE HANDLER
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    default_vision_prompt = "Provide a comprehensive technical engineering analysis of this image suitable for a Diploma student. Identify components, explain functions, or diagnose errors if possible."
-    user_text = update.message.caption or update.message.text or default_vision_prompt
+    user_input = update.message.text or update.message.caption or ""
+
+    # Memory feature: 'Yaad rakho' detection
+    if "yaad rakho" in user_input.lower() or "remember" in user_input.lower():
+        # Extract info to remember
+        memory_data = user_input.replace("yaad rakho", "").replace("remember", "").strip()
+        user_memories[chat_id] = user_memories.get(chat_id, "") + f" {memory_data}."
+        await update.message.reply_text(f"✅ Theek hai, maine yaad kar liya: '{memory_data}'")
+        return
 
     await context.bot.send_chat_action(chat_id=chat_id, action='typing')
 
-    # Naya session banayein agar pehli baar message aaya hai
+    # Session build-up
     if chat_id not in user_sessions:
-        user_sessions[chat_id] = [{"role": "system", "content": system_instruction}]
+        user_sessions[chat_id] = []
+    
+    # Inject persistent memory into system instruction
+    current_memory = user_memories.get(chat_id, "Abhi tak kuch yaad nahi hai.")
+    dynamic_system_prompt = f"{system_instruction}\n\nUSER SPECIFIC DATA (IMPORTANT): {current_memory}"
 
-    # ⚠️ MEMORY LIMIT LOGIC: Agar chat 15 messages se badi ho jaye, toh purane messages delete karein
-    if len(user_sessions[chat_id]) > 15:
-        del user_sessions[chat_id][1:3]
-
+    messages = [{"role": "system", "content": dynamic_system_prompt}]
+    messages.extend(user_sessions[chat_id][-10:]) # Sirf last 10 messages context ke liye
+    
+    # Handle Image/Text
     file_path = None
-    try:
-        if update.message.photo:
-            await update.message.reply_text("फोटो मिल गई है! Technical data को analyze किया जा रहा है... ⚙️🖼️")
-            photo_file = await update.message.photo[-1].get_file()
-            file_path = f"temp_img_{chat_id}.jpg"
-            await photo_file.download_to_drive(file_path)
-            
-            base_path = f"data:image/jpeg;base64,{encode_image(file_path)}"
-            user_sessions[chat_id].append({
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": user_text},
-                    {"type": "image_url", "image_url": {"url": base_path}}
-                ]
-            })
-        else:
-            user_sessions[chat_id].append({"role": "user", "content": user_text})
-            
-        current_model = "openai/gpt-4o-mini" 
+    if update.message.photo:
+        photo_file = await update.message.photo[-1].get_file()
+        file_path = f"img_{chat_id}.jpg"
+        await photo_file.download_to_drive(file_path)
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": user_input or "Analyze this image technically."},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(file_path)}"}}
+            ]
+        })
+    else:
+        messages.append({"role": "user", "content": user_input})
 
+    try:
         response = await client.chat.completions.create(
-            model=current_model, 
-            messages=user_sessions[chat_id],
-            temperature=0.6,          # Technical accuracy + uniqueness
-            presence_penalty=0.4,     # Naye concepts push karne ke liye
-            frequency_penalty=0.3     # Repetition rokne ke liye
+            model="openai/gpt-4o-mini",
+            messages=messages,
+            temperature=0.7,         # Uniqueness aur accuracy ka balance
+            presence_penalty=0.6,    # Naye concepts aur words lane ke liye
+            frequency_penalty=0.5    # Baar-baar wahi word repeat na ho
         )
 
-        raw_reply_text = response.choices[0].message.content
-        user_sessions[chat_id].append({"role": "assistant", "content": raw_reply_text})
+        reply = response.choices[0].message.content
+        user_sessions[chat_id].append({"role": "user", "content": user_input})
+        user_sessions[chat_id].append({"role": "assistant", "content": reply})
 
-        # --- POST-PROCESSING: TEXT RESPONSE ---
-        reply_text = raw_reply_text.replace('\\[', '').replace('\\]', '').replace('\\frac', '').replace('\\eta', 'η').replace('\\', '')
+        # Format and send
+        clean_reply = reply.replace('\\[', '').replace('\\]', '').replace('\\', '')
         
-        # Long message handler (for long queries)
-        if len(reply_text) > 4000:
-             chunks = split_text(reply_text)
-             for chunk in chunks:
-                try:
-                    await update.message.reply_text(chunk, parse_mode='Markdown')
-                except Exception:
-                    await update.message.reply_text(chunk) # Fallback to plain text 
+        if len(clean_reply) > 4000:
+            for chunk in split_text(clean_reply):
+                await update.message.reply_text(chunk, parse_mode='Markdown')
         else:
             try:
-                await update.message.reply_text(reply_text, parse_mode='Markdown')
-            except Exception:
-                await update.message.reply_text(reply_text) # Fallback to plain text
-                
+                await update.message.reply_text(clean_reply, parse_mode='Markdown')
+            except:
+                await update.message.reply_text(clean_reply)
+
     except Exception as e:
-        error_msg = f"⚠️ API Error:\n`{str(e)}`"
-        try:
-            await update.message.reply_text(error_msg, parse_mode='Markdown')
-        except Exception:
-            await update.message.reply_text(error_msg)
-        print(f"Error detail: {e}")
-        
+        await update.message.reply_text(f"⚠️ Error: `{str(e)}`", parse_mode='Markdown')
     finally:
-        if file_path and os.path.exists(file_path):
-            os.remove(file_path)
+        if file_path and os.path.exists(file_path): os.remove(file_path)
 
 def main():
-    # Render ke liye background me Flask server start karein
-    server_thread = threading.Thread(target=run_web_server)
-    server_thread.daemon = True
-    server_thread.start()
-
+    threading.Thread(target=run_web_server, daemon=True).start()
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-    
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("clear", clear_memory)) 
+    application.add_handler(CommandHandler("clear", clear_memory))
     application.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle_message))
-    
-    print("🚀 EV Telegram Bot is running on Render! (Creator: Rahul Kumar Raj)")
+    print("🚀 EV Tech Bot Pro is running...")
     application.run_polling()
 
 if __name__ == '__main__':
     if TELEGRAM_BOT_TOKEN and OPENROUTER_API_KEY:
         main()
     else:
-        print("Bot start nahi ho sakta kyunki API keys missing hain. Kripya Render me Environment Variables set karein.")
-
+        print("Error: Missing API Keys in Environment Variables!")
