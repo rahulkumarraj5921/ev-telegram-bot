@@ -19,7 +19,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "✅ EV Tech R&D Bot is Live and Running on Render!"
+    return "✅ Advanced EV R&D Bot is Live and Running on Render!"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
@@ -29,18 +29,19 @@ def run_flask():
 user_sessions = {}
 client = None 
 
-# 🧠 EXTREME ADVANCE: "R&D CHIEF ENGINEER & PhD PROFESSOR" DIMAAG
+# 🧠 EXTREME ADVANCE & UNIQUE "R&D CHIEF ENGINEER" DIMAAG
 system_instruction = """
 Your Role: You are a Senior EV R&D Chief Engineer and a PhD-level Technical Professor.
 Creator/Identity Rule: Agar koi aapse puche ki "tumhe kisne banaya hai", "tumhare developer kaun hain", toh hamesha garv se yahi reply dena: "मुझे Rahul Kumar Raj (Government Polytechnic Nawada) ने बनाया है!"
 Target Audience: Final year B.Tech, M.Tech students, and EV Industry Professionals.
 Your Rules:
-1. EXTREME TECHNICAL DEPTH: NEVER give basic or layman definitions. Assume the user already knows the basics. Dive straight into deep engineering concepts. 
-2. USE R&D TERMINOLOGY: Use advanced jargon like Field Oriented Control (FOC), Space Vector PWM (SVPWM), d-q axis modeling, SEI layer degradation, Extended Kalman Filters (EKF) for BMS SOC/SOH estimation, SiC MOSFET switching losses, and Thermodynamic thermal runaway.
-3. MATHEMATICAL MODELING: Always include practical engineering formulas, mathematical models, or efficiency calculations in plain text (e.g., Torque T = (3/2)*(P/2)*(Psi_m*I_q), Aerodynamic Drag Fd = 0.5*rho*Cd*A*v^2). NEVER use LaTeX format.
-4. STRUCTURE: Use highly structured formats: "Core Principle", "Mathematical Model", "Industrial Application", and "Efficiency Losses/Challenges".
-5. LANGUAGE: Explain the deep concepts in highly professional Hindi/Hinglish, but keep ALL technical terms, equations, and component names in strict English.
-6. TONE: Highly analytical, authoritative, data-driven, and strictly academic. No casual chatting.
+1. EXTREME TECHNICAL DEPTH: NEVER give basic or layman definitions. Assume the user already knows the basics. Dive straight into deep engineering concepts.
+2. USE R&D TERMINOLOGY: Use advanced jargon like Field Oriented Control (FOC), Space Vector PWM (SVPWM), d-q axis modeling, SEI layer degradation, Extended Kalman Filters (EKF), SiC/GaN MOSFETs.
+3. MATHEMATICAL MODELING: Always include practical engineering formulas or efficiency calculations in plain text (e.g., Torque T = (3/2)*(P/2)*(Psi_m*I_q)). NEVER use LaTeX.
+4. UNIQUE INSIGHTS: Always provide a "Pro-Tip" or "Industry Insight" that is unique and not found in normal textbooks (e.g., discussing 800V architectures, Solid-state battery challenges, V2G bi-directional charging).
+5. STRUCTURE: Use clear, highly structured formats without Markdown heading tags (Avoid ###). Use bullet points.
+6. LANGUAGE: Explain deep concepts in highly professional Hindi/Hinglish, but keep ALL technical terms and formulas in strict English.
+7. TONE: Highly analytical, authoritative, and strictly academic.
 """
 
 def split_text(text, limit=4000):
@@ -97,21 +98,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             user_sessions[chat_id].append({"role": "user", "content": user_text})
             
-        # ✨ AI ACCURACY SETTINGS: Temperature 0.5 (Isse AI bilkul precise aur strict technical answer dega, gappe nahi marega)
+        # Precise technical output settings
         response = await client.chat.completions.create(
             model="openai/gpt-4o-mini", 
             messages=user_sessions[chat_id],
-            temperature=0.5, 
+            temperature=0.6, 
             frequency_penalty=0.4
         )
         
         raw_reply_text = response.choices[0].message.content
         user_sessions[chat_id].append({"role": "assistant", "content": raw_reply_text})
         
-        # Clean specific formatting that might break Telegram markdown
+        # --- BOLD TEXT & FORMATTING FIX ---
         clean_reply = raw_reply_text.replace('\\[', '').replace('\\]', '').replace('\\frac', '').replace('\\eta', 'η').replace('\\', '')
         
-        # Send long messages in chunks
+        # OpenAI ke '**' ko Telegram ke '*' me badalna (Taki text sahi se BOLD ho)
+        clean_reply = clean_reply.replace('**', '*')
+        
+        # Faltu ke '###' aur '####' ko hatana
+        clean_reply = clean_reply.replace('#### ', '').replace('### ', '').replace('## ', '')
+        # ----------------------------------
+        
+        # Send long messages in chunks safely
         if len(clean_reply) > 4000:
              for chunk in split_text(clean_reply):
                 await update.message.reply_text(chunk, parse_mode='Markdown')
@@ -123,7 +131,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
     except Exception as e:
         print(f"API Error: {e}")
-        await update.message.reply_text(f"⚠️ R&D Server Error. Please analyze the logs: `{str(e)}`", parse_mode='Markdown')
+        await update.message.reply_text(f"⚠️ R&D Server Error. Please wait: `{str(e)}`", parse_mode='Markdown')
     finally:
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
@@ -166,3 +174,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
