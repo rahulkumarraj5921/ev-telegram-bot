@@ -19,7 +19,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "✅ Telegram Smart Bot is Live and Running on Render!"
+    return "✅ EV Tech Bot is Live and Running on Render!"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
@@ -29,17 +29,18 @@ def run_flask():
 user_sessions = {}
 client = None 
 
-# 🧠 NAYA DIMAAG: Ekdum WhatsApp bot wala (Human-like & Smart)
+# 🧠 ORIGINAL "EV PROFESSOR" DIMAAG
 system_instruction = """
-Role: You are a highly intelligent, thoughtful, and friendly human-like companion. 
+Your Role: You are a Senior EV Engineering Professor and Industry Expert. 
 Creator/Identity Rule: Agar koi aapse puche ki "tumhe kisne banaya hai", "tumhare developer kaun hain", ya "tumhara baap kaun hai", toh hamesha garv se yahi reply dena: "मुझे Rahul Kumar Raj (Government Polytechnic Nawada) ने बनाया है!"
-Rules for your behavior:
-1. Act Like a Human: Talk naturally, empathetically, and logically like a smart human mentor/friend. NEVER say "I am an AI", "I am a large language model", or act like a robot.
-2. Context Aware: Remember the user's previous messages in the conversation and reply accordingly.
-3. Variety: Never repeat the exact same response or robotic phrases. Be dynamic, creative, and natural in your wording.
-4. Thoughtful Answers: Think carefully before answering. Give practical, detailed, and accurate answers on ANY topic (coding, science, casual chat, etc.).
-5. Language: Communicate naturally in conversational Hindi/Hinglish (like WhatsApp chats), unless asked in English.
-6. Formatting: Use short paragraphs and simple plain text. NEVER use LaTeX.
+Target Audience: Engineering students (Diploma level).
+Your Rules:
+1. TECHNICAL DEPTH: Explain core principles (Thermodynamics, Power Electronics, Battery Chemistry, EV Infrastructure) in a way that is easy for Diploma students to understand.
+2. STRUCTURE: Use clear headings and bullet points. 
+3. EQUATIONS: NEVER use LaTeX. Write all formulas in simple, plain text format (e.g., Efficiency = (P_out / P_in) * 100). Use standard Unicode characters (Ω, η, Δ).
+4. MULTIMODAL: Analyze uploaded technical diagrams like an engineer. Identify components and errors.
+5. LANGUAGE: Reply in the exact language the user uses (Hindi, Hinglish, English), but keep technical terms in English.
+6. EMOJIS: Use emojis naturally (🚗, 🔋, ⚡, ⚙️) to keep the interaction academic yet engaging.
 """
 
 def split_text(text, limit=4000):
@@ -49,14 +50,19 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-# 🎓 NAYA WELCOME MESSAGE
+# 🎓 ORIGINAL EV BOT WELCOME MESSAGE
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
-        "🌟 **Welcome to your Smart AI Assistant!** 🚀\n\n"
-        "Hello! मैं एक एडवांस और दोस्ताना AI हूँ, बिल्कुल एक इंसान की तरह।\n\n"
-        "आप मुझसे कुछ भी पूछ सकते हैं—चाहे वो कोडिंग हो, पढ़ाई हो, या बस ऐसे ही कोई गपशप! अपना सवाल टाइप करें और भेजें। 👇\n\n"
-        "👨‍💻 **Developer:** Rahul Kumar Raj (GP Nawada)\n\n"
-        "*(पुरानी बातें भुलाकर नया टॉपिक शुरू करने के लिए /clear टाइप करें)*"
+        "🎓 **EV-Tech Scholar Bot में आपका स्वागत है!** ⚙️🔋\n\n"
+        "नमस्ते Engineer! यह AI Assistant खास तौर पर Government Polytechnic Nawada के छात्रों और सभी Diploma Engineers के लिए बनाया गया है। 🚀\n\n"
+        "Placement की टेंशन हो या Semester Exams की, Electric Vehicles के हर concept को अब हम मिलकर आसान बनाएंगे。\n\n"
+        "**🛠️ मैं आपकी कैसे मदद कर सकता हूँ?**\n"
+        "👉 **Deep Tech:** Thermodynamics, Motors और BMS की वर्किंग।\n"
+        "👉 **Diagram Scan:** किसी भी circuit या पार्ट की फोटो भेजें और तुरंत analysis पाएं।\n"
+        "👉 **Career Prep:** टॉप EV कंपनियों के इंटरव्यू सवाल।\n\n"
+        "👨‍💻 **Developer:** Rahul Kumar Raj (Government Polytechnic Nawada)\n\n"
+        "📚 *अपना सवाल नीचे लिखें या फोटो भेजें, और चलिए पढ़ाई शुरू करते हैं!*\n"
+        "*(Memory clear करने के लिए किसी भी समय /clear टाइप करें)*"
     )
     await update.message.reply_text(welcome_text, parse_mode='Markdown')
 
@@ -64,26 +70,25 @@ async def clear_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id in user_sessions:
         del user_sessions[chat_id]
-    await update.message.reply_text("🧹 मैंने पुरानी बातें भुला दी हैं! चलिए कोई नया टॉपिक शुरू करते हैं।")
+    await update.message.reply_text("🧹 Session memory clear कर दी गई है! चलिए कोई नया टॉपिक शुरू करते हैं।")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    user_text = update.message.caption or update.message.text or "Is image me kya hai?"
+    default_vision_prompt = "Provide a comprehensive technical engineering analysis of this image suitable for a Diploma student. Identify components, explain functions, or diagnose errors if possible."
+    user_text = update.message.caption or update.message.text or default_vision_prompt
 
     await context.bot.send_chat_action(chat_id=chat_id, action='typing')
 
-    # Memory Check
     if chat_id not in user_sessions:
         user_sessions[chat_id] = [{"role": "system", "content": system_instruction}]
 
-    # Memory Limit (Delete oldest if history is too long)
     if len(user_sessions[chat_id]) > 15:
         del user_sessions[chat_id][1:3]
 
     file_path = None
     try:
         if update.message.photo:
-            await update.message.reply_text("फोटो मिल गई! मैं इसे देख रहा हूँ... 👀")
+            await update.message.reply_text("फोटो मिल गई है! Technical data को analyze किया जा रहा है... ⚙️🖼️")
             photo_file = await update.message.photo[-1].get_file()
             file_path = f"temp_{chat_id}.jpg"
             await photo_file.download_to_drive(file_path)
@@ -92,30 +97,32 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             user_sessions[chat_id].append({"role": "user", "content": user_text})
             
-        # API Call with WhatsApp bot settings (temperature 0.85, frequency_penalty 0.5)
+        # EV technical answers ke liye temperature 0.7 set kiya hai
         response = await client.chat.completions.create(
             model="openai/gpt-4o-mini", 
             messages=user_sessions[chat_id],
-            temperature=0.85,
+            temperature=0.7, 
             frequency_penalty=0.5
         )
         
         raw_reply_text = response.choices[0].message.content
         user_sessions[chat_id].append({"role": "assistant", "content": raw_reply_text})
         
-        reply_text = raw_reply_text.replace('\\[', '').replace('\\]', '')
+        # Format cleaning
+        clean_reply = raw_reply_text.replace('\\[', '').replace('\\]', '').replace('\\frac', '').replace('\\eta', 'η').replace('\\', '')
         
-        if len(reply_text) > 4000:
-             for chunk in split_text(reply_text):
+        if len(clean_reply) > 4000:
+             for chunk in split_text(clean_reply):
                 await update.message.reply_text(chunk, parse_mode='Markdown')
         else:
             try:
-                await update.message.reply_text(reply_text, parse_mode='Markdown')
+                await update.message.reply_text(clean_reply, parse_mode='Markdown')
             except Exception:
-                await update.message.reply_text(reply_text)
+                await update.message.reply_text(clean_reply)
                 
     except Exception as e:
-        await update.message.reply_text(f"⚠️ Error: `{str(e)}`", parse_mode='Markdown')
+        print(f"API Error: {e}")
+        await update.message.reply_text(f"⚠️ Technical Error:\n`{str(e)}`", parse_mode='Markdown')
     finally:
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
@@ -131,7 +138,11 @@ def main():
     try:
         client = AsyncOpenAI(
             api_key=OPENROUTER_API_KEY,
-            base_url="https://openrouter.ai/api/v1"
+            base_url="https://openrouter.ai/api/v1",
+            default_headers={
+                "HTTP-Referer": "https://t.me/EV_Tech_Bot", 
+                "X-OpenRouter-Title": "EV Engineering Scholar Bot" 
+            }
         )
 
         threading.Thread(target=run_flask, daemon=True).start()
@@ -145,7 +156,7 @@ def main():
         application.add_handler(CommandHandler("clear", clear_memory))
         application.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle_message))
         
-        print("🚀 SMART BOT IS LIVE NOW!", flush=True)
+        print("🚀 EV PROFESSOR BOT IS LIVE NOW!", flush=True)
         application.run_polling()
         
     except Exception as e:
