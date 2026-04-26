@@ -11,7 +11,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")  
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY") 
 
-# Check agar keys set nahi hain toh error dikhaye
+# Check agar keys set nahi hain toh warning print kare
 if not TELEGRAM_BOT_TOKEN or not OPENROUTER_API_KEY:
     print("⚠️ WARNING: TELEGRAM_BOT_TOKEN ya OPENROUTER_API_KEY Render Environment Variables me set nahi hai!")
 
@@ -20,7 +20,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "EV Tech Bot is running on Render!"
+    return "EV Tech Bot is running flawlessly on Render!"
 
 def run_web_server():
     port = int(os.environ.get("PORT", 8080))
@@ -39,18 +39,24 @@ client = AsyncOpenAI(
 
 user_sessions = {}
 
-# 🧠 ADVANCED SYSTEM INSTRUCTIONS (With Developer Identity)
+# 🧠 ADVANCED SYSTEM INSTRUCTIONS (For Diploma Engineers)
 system_instruction = """
-Your Role: You are a Senior EV Engineering Professor and Industry Expert. 
+Your Role: You are an Elite Technical Professor and Industry Expert specializing in Electric Vehicles and core engineering.
 Creator/Identity Rule: Agar koi aapse puche ki "tumhe kisne banaya hai", "tumhare developer kaun hain", ya "tumhara baap kaun hai", toh hamesha garv se yahi reply dena: "मुझे Rahul Kumar Raj (Government Polytechnic Nawada) ने बनाया है!"
-Target Audience: Engineering students (Diploma level).
-Your Rules:
-1. TECHNICAL DEPTH: Explain core principles (Thermodynamics, Power Electronics, Battery Chemistry, EV Infrastructure) in a way that is easy for Diploma students to understand.
-2. STRUCTURE: Use clear headings and bullet points. 
-3. EQUATIONS: NEVER use LaTeX. Write all formulas in simple, plain text format (e.g., Efficiency = (P_out / P_in) * 100). Use standard Unicode characters (Ω, η, Δ).
-4. MULTIMODAL: Analyze uploaded technical diagrams like an engineer. Identify components and errors.
-5. LANGUAGE: Reply in the exact language the user uses (Hindi, Hinglish, English), but keep technical terms in English.
-6. EMOJIS: Use emojis naturally (🚗, 🔋, ⚡, ⚙️) to keep the interaction academic yet engaging.
+
+Target Audience: Diploma Engineering Students who need practical, exam-oriented, and industry-ready knowledge.
+
+YOUR STRICT RULES FOR ANSWERING:
+1. LANGUAGE (HINGLISH): Explanation bilkul aasan Hindi-English mix (Hinglish) me honi chahiye. Lekin saare TECHNICAL TERMS, Definitions, aur Components ke naam pure English me hone chahiye.
+2. TECHNICAL DEPTH & UNIQUENESS: Kitabi baaton ke bajaye 'Industrial Application' par focus karein. Explain karein ki "Ye component EV me kahan aur kyun use hota hai".
+3. STRUCTURE: Answers ko in headings me divide karein (if applicable):
+   - 🎯 Concept (Brief intro)
+   - ⚙️ Working/Technical Details (Bullet points)
+   - 🏭 Industrial Application (Real-world use case)
+   - 📝 Quick Formula/Key Point (For exams)
+4. EQUATIONS: NEVER use LaTeX. Write all formulas in simple, plain text format (e.g., Efficiency = (P_out / P_in) * 100). Use standard Unicode characters (Ω, η, Δ).
+5. MULTIMODAL: Analyze uploaded diagrams like a senior engineer. Pinpoint specific flaws, circuit issues, or component functions accurately.
+6. TONE: Professional, encouraging, aur strictly point-to-point. Faltu ki lambi baatein na karein.
 """
 
 # --- Helper Functions ---
@@ -64,19 +70,22 @@ def encode_image(image_path):
 # 🎓 PREMIUM WELCOME MESSAGE 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
-        "🎓 *EV-Tech Scholar Bot में आपका स्वागत है!* ⚙️🔋\n\n"
+        "🎓 **EV-Tech Scholar Bot में आपका स्वागत है!** ⚙️🔋\n\n"
         "नमस्ते Engineer! यह AI Assistant खास तौर पर Government Polytechnic Nawada के छात्रों और सभी Diploma Engineers के लिए बनाया गया है। 🚀\n\n"
-        "Placement की टेंशन हो या Semester Exams की, Electric Vehicles के हर concept को अब हम मिलकर आसान बनाएंगे。\n\n"
-        "*🛠️ मैं आपकी कैसे मदद कर सकता हूँ?*\n"
-        "👉 *Deep Tech:* Thermodynamics, Motors और BMS की वर्किंग।\n"
-        "👉 *Diagram Scan:* किसी भी circuit या पार्ट की फोटो भेजें और तुरंत analysis पाएं।\n"
-        "👉 *Career Prep:* टॉप EV कंपनियों के इंटरव्यू सवाल।\n\n"
-        "👨‍💻 *Developer:* Rahul Kumar Raj (Government Polytechnic Nawada)\n\n"
-        "📚 _अपना सवाल नीचे लिखें या फोटो भेजें, और चलिए पढ़ाई शुरू करते हैं!_\n"
-        "_(Memory clear करने के लिए किसी भी समय /clear टाइप करें)_"
+        "Placement की टेंशन हो या Semester Exams की, Electric Vehicles के हर concept को अब हम मिलकर आसान बनाएंगे।\n\n"
+        "**🛠️ मैं आपकी कैसे मदद कर सकता हूँ?**\n"
+        "👉 **Deep Tech:** Thermodynamics, Motors और BMS की वर्किंग।\n"
+        "👉 **Diagram Scan:** किसी भी circuit या पार्ट की फोटो भेजें और तुरंत analysis पाएं।\n"
+        "👉 **Career Prep:** टॉप EV कंपनियों के इंटरव्यू सवाल।\n\n"
+        "👨‍💻 **Developer:** Rahul Kumar Raj (Government Polytechnic Nawada)\n\n"
+        "📚 *अपना सवाल नीचे लिखें या फोटो भेजें, और चलिए पढ़ाई शुरू करते हैं!*\n"
+        "*(Memory clear करने के लिए किसी भी समय /clear टाइप करें)*"
     )
     
-    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+    try:
+        await update.message.reply_text(welcome_text, parse_mode='Markdown')
+    except Exception:
+        await update.message.reply_text(welcome_text) # Fallback if markdown fails
 
 # Memory clear karne ke liye command
 async def clear_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -125,8 +134,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = await client.chat.completions.create(
             model=current_model, 
             messages=user_sessions[chat_id],
-            temperature=0.8, # Variety ke liye
-            frequency_penalty=0.5 # Repetition rokne ke liye
+            temperature=0.6,          # Technical accuracy + uniqueness
+            presence_penalty=0.4,     # Naye concepts push karne ke liye
+            frequency_penalty=0.3     # Repetition rokne ke liye
         )
 
         raw_reply_text = response.choices[0].message.content
@@ -134,23 +144,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # --- POST-PROCESSING: TEXT RESPONSE ---
         reply_text = raw_reply_text.replace('\\[', '').replace('\\]', '').replace('\\frac', '').replace('\\eta', 'η').replace('\\', '')
-        # Telegram Markdown fixing ke liye (Double asterisks ko single me badalna taaki bold theek se ho aur error na aaye)
-        reply_text = reply_text.replace('**', '*')
         
         # Long message handler (for long queries)
         if len(reply_text) > 4000:
              chunks = split_text(reply_text)
              for chunk in chunks:
-                await update.message.reply_text(chunk, parse_mode='Markdown')
+                try:
+                    await update.message.reply_text(chunk, parse_mode='Markdown')
+                except Exception:
+                    await update.message.reply_text(chunk) # Fallback to plain text 
         else:
             try:
                 await update.message.reply_text(reply_text, parse_mode='Markdown')
             except Exception:
-                await update.message.reply_text(reply_text)
+                await update.message.reply_text(reply_text) # Fallback to plain text
                 
     except Exception as e:
         error_msg = f"⚠️ API Error:\n`{str(e)}`"
-        await update.message.reply_text(error_msg, parse_mode='Markdown')
+        try:
+            await update.message.reply_text(error_msg, parse_mode='Markdown')
+        except Exception:
+            await update.message.reply_text(error_msg)
         print(f"Error detail: {e}")
         
     finally:
@@ -177,3 +191,4 @@ if __name__ == '__main__':
         main()
     else:
         print("Bot start nahi ho sakta kyunki API keys missing hain. Kripya Render me Environment Variables set karein.")
+
