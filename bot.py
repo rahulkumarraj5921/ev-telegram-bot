@@ -4,6 +4,7 @@ import base64
 import threading
 import sys
 import traceback
+import asyncio  # <-- NAYA: Asyncio import kiya gaya hai
 from flask import Flask
 from openai import AsyncOpenAI
 from telegram import Update
@@ -84,23 +85,25 @@ def main():
     global client
     print("🔄 Bot start ho raha hai...", flush=True)
 
-    # 1. Key Check
     if not TELEGRAM_BOT_TOKEN or not OPENROUTER_API_KEY:
         print("❌ FATAL ERROR: API Keys missing! Render Settings me Keys check karein.", flush=True)
         sys.exit(1)
 
     try:
-        # 2. Client Setup
         client = AsyncOpenAI(
             api_key=OPENROUTER_API_KEY,
             base_url="https://openrouter.ai/api/v1"
         )
 
-        # 3. Server Start
         threading.Thread(target=run_flask, daemon=True).start()
         print("✅ Web Server started!", flush=True)
 
-        # 4. Bot Start
+        # --- NAYA FIX YAHAN HAI ---
+        # Python ko forcefully apna Event Loop banane ka order dena
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        # --------------------------
+
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
         application.add_handler(CommandHandler("start", start))
         application.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle_message))
@@ -114,4 +117,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
