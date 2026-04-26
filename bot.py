@@ -7,43 +7,43 @@ import traceback
 import asyncio
 from flask import Flask
 from openai import AsyncOpenAI
-from telegram import Update
+from telegram import Update, constants
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# --- SECURE API KEYS ---
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+# ⚠️ APNI ASLI KEYS (Aapki di hui keys)
+TELEGRAM_BOT_TOKEN = "8632551535:AAEgv13wUvwnX_mN4lAcdjgpZSFy8AAhBFM"  
+OPENROUTER_API_KEY = "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" 
 
-# --- RENDER WEB SERVER ---
+# --- RENDER WEB SERVER (Taki bot 24x7 chalta rahe) ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "✅ Advanced EV R&D Bot is Live and Running on Render!"
+    return "✅ EV Tech Scholar Bot is Live and Running on Render!"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
 
-# --- BOT LOGIC & MEMORY ---
+# --- BOT LOGIC ---
 user_sessions = {}
-client = None 
+client = None
 
-# 🧠 EXTREME ADVANCE & UNIQUE "R&D CHIEF ENGINEER" DIMAAG
+# 🧠 ADVANCED SYSTEM INSTRUCTIONS (Aapka original Diploma level prompt)
 system_instruction = """
-Your Role: You are a Senior EV R&D Chief Engineer and a PhD-level Technical Professor.
-Creator/Identity Rule: Agar koi aapse puche ki "tumhe kisne banaya hai", "tumhare developer kaun hain", toh hamesha garv se yahi reply dena: "मुझे Rahul Kumar Raj (Government Polytechnic Nawada) ने बनाया है!"
-Target Audience: Final year B.Tech, M.Tech students, and EV Industry Professionals.
+Your Role: You are a Senior EV Engineering Professor and Industry Expert. 
+Creator/Identity Rule: Agar koi aapse puche ki "tumhe kisne banaya hai", "tumhare developer kaun hain", ya "tumhara baap kaun hai", toh hamesha garv se yahi reply dena: "मुझे Rahul Kumar Raj (Government Polytechnic Nawada) ने बनाया है!"
+Target Audience: Engineering students (Diploma level).
 Your Rules:
-1. EXTREME TECHNICAL DEPTH: NEVER give basic or layman definitions. Assume the user already knows the basics. Dive straight into deep engineering concepts.
-2. USE R&D TERMINOLOGY: Use advanced jargon like Field Oriented Control (FOC), Space Vector PWM (SVPWM), d-q axis modeling, SEI layer degradation, Extended Kalman Filters (EKF), SiC/GaN MOSFETs.
-3. MATHEMATICAL MODELING: Always include practical engineering formulas or efficiency calculations in plain text (e.g., Torque T = (3/2)*(P/2)*(Psi_m*I_q)). NEVER use LaTeX.
-4. UNIQUE INSIGHTS: Always provide a "Pro-Tip" or "Industry Insight" that is unique and not found in normal textbooks (e.g., discussing 800V architectures, Solid-state battery challenges, V2G bi-directional charging).
-5. STRUCTURE: Use clear, highly structured formats without Markdown heading tags (Avoid ###). Use bullet points.
-6. LANGUAGE: Explain deep concepts in highly professional Hindi/Hinglish, but keep ALL technical terms and formulas in strict English.
-7. TONE: Highly analytical, authoritative, and strictly academic.
+1. TECHNICAL DEPTH: Explain core principles (Thermodynamics, Power Electronics, Battery Chemistry, EV Infrastructure) in a way that is easy for Diploma students to understand.
+2. STRUCTURE: Use clear headings and bullet points. 
+3. EQUATIONS: NEVER use LaTeX. Write all formulas in simple, plain text format (e.g., Efficiency = (P_out / P_in) * 100). Use standard Unicode characters (Ω, η, Δ).
+4. MULTIMODAL: Analyze uploaded technical diagrams like an engineer. Identify components and errors.
+5. LANGUAGE: Reply in the exact language the user uses (Hindi, Hinglish, English), but keep technical terms in English.
+6. EMOJIS: Use emojis naturally (🚗, 🔋, ⚡, ⚙️) to keep the interaction academic yet engaging.
 """
 
+# --- Helper Functions ---
 def split_text(text, limit=4000):
     return [text[i:i+limit] for i in range(0, len(text), limit)]
 
@@ -51,100 +51,112 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-# 🎓 R&D LEVEL WELCOME MESSAGE
+# 🎓 PREMIUM WELCOME MESSAGE (Aapka banaya hua)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
-        "🔬 **EV-Tech R&D Scholar Bot में आपका स्वागत है!** ⚙️⚡\n\n"
-        "Greetings Engineers! मैं आपका Advanced R&D Technical Assistant हूँ, जिसे **Rahul Kumar Raj (Government Polytechnic Nawada)** ने डेवलप किया है। 🚀\n\n"
-        "**This bot is strictly for Advanced Engineering Concepts:**\n"
-        "⚡ **Powertrain:** FOC, SVPWM, d-q modeling, Inverter topologies.\n"
-        "🔋 **Battery Tech:** EKF estimation, SEI degradation, Thermal Runaway thermodynamics.\n"
-        "📊 **System Design:** Aerodynamics, Traction formulas, and SiC/GaN power electronics.\n\n"
-        "📚 *अपना एडवांस इंजीनियरिंग सवाल पूछें या टेक्निकल डायग्राम अपलोड करें!* 👇\n"
-        "*(नया टॉपिक शुरू करने के लिए /clear टाइप करें)*"
+        "🎓 *EV-Tech Scholar Bot में आपका स्वागत है!* ⚙️🔋\n\n"
+        "नमस्ते Engineer! यह AI Assistant खास तौर पर Government Polytechnic Nawada के छात्रों और सभी Diploma Engineers के लिए बनाया गया है। 🚀\n\n"
+        "Placement की टेंशन हो या Semester Exams की, Electric Vehicles के हर concept को अब हम मिलकर आसान बनाएंगे।\n\n"
+        "*🛠️ मैं आपकी कैसे मदद कर सकता हूँ?*\n"
+        "👉 *Deep Tech:* Thermodynamics, Motors और BMS की वर्किंग।\n"
+        "👉 *Diagram Scan:* किसी भी circuit या पार्ट की फोटो भेजें और तुरंत analysis पाएं।\n"
+        "👉 *Career Prep:* टॉप EV कंपनियों के इंटरव्यू सवाल।\n\n"
+        "👨‍💻 *Developer:* Rahul Kumar Raj (Government Polytechnic Nawada)\n\n"
+        "📚 _अपना सवाल नीचे लिखें या फोटो भेजें, और चलिए पढ़ाई शुरू करते हैं!_\n"
+        "_(Memory clear करने के लिए किसी भी समय /clear टाइप करें)_"
     )
+    
     await update.message.reply_text(welcome_text, parse_mode='Markdown')
 
+# Memory clear karne ke liye command
 async def clear_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id in user_sessions:
         del user_sessions[chat_id]
-    await update.message.reply_text("🧹 सिस्टम मेमोरी फ्लश कर दी गई है! चलिए नया टेक्निकल एनालिसिस शुरू करते हैं।")
+    await update.message.reply_text("🧹 Session memory clear कर दी गई है! चलिए कोई नया टॉपिक शुरू करते हैं।")
 
+# Message handler logic
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    default_vision_prompt = "Perform a deep technical engineering analysis of this schematic/diagram. Identify the topology, components (e.g., IGBTs, MOSFETs, MCU), and explain the mathematical working principle or potential failure modes."
+    default_vision_prompt = "Provide a comprehensive technical engineering analysis of this image suitable for a Diploma student. Identify components, explain functions, or diagnose errors if possible."
     user_text = update.message.caption or update.message.text or default_vision_prompt
 
     await context.bot.send_chat_action(chat_id=chat_id, action='typing')
 
-    # Session Management
+    # Naya session banayein agar pehli baar message aaya hai
     if chat_id not in user_sessions:
         user_sessions[chat_id] = [{"role": "system", "content": system_instruction}]
 
-    # Keep memory limited to last 15 interactions
+    # ⚠️ MEMORY LIMIT LOGIC
     if len(user_sessions[chat_id]) > 15:
         del user_sessions[chat_id][1:3]
 
     file_path = None
     try:
         if update.message.photo:
-            await update.message.reply_text("⚙️ डायग्राम प्राप्त हुआ। Deep Technical Analysis प्रोसेस किया जा रहा है...")
+            await update.message.reply_text("फोटो मिल गई है! Technical data को analyze किया जा रहा है... ⚙️🖼️")
             photo_file = await update.message.photo[-1].get_file()
-            file_path = f"temp_{chat_id}.jpg"
+            file_path = f"temp_img_{chat_id}.jpg"
             await photo_file.download_to_drive(file_path)
+            
             base_path = f"data:image/jpeg;base64,{encode_image(file_path)}"
-            user_sessions[chat_id].append({"role": "user", "content": [{"type": "text", "text": user_text}, {"type": "image_url", "image_url": {"url": base_path}}]})
+            user_sessions[chat_id].append({
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": user_text},
+                    {"type": "image_url", "image_url": {"url": base_path}}
+                ]
+            })
         else:
             user_sessions[chat_id].append({"role": "user", "content": user_text})
             
-        # Precise technical output settings
+        # Aapki settings: Temperature 0.8, Penalty 0.5
         response = await client.chat.completions.create(
             model="openai/gpt-4o-mini", 
             messages=user_sessions[chat_id],
-            temperature=0.6, 
-            frequency_penalty=0.4
+            temperature=0.8, 
+            frequency_penalty=0.5 
         )
-        
+
         raw_reply_text = response.choices[0].message.content
         user_sessions[chat_id].append({"role": "assistant", "content": raw_reply_text})
+
+        # --- TELEGRAM FORMATTING FIX (Bold text ke liye) ---
+        reply_text = raw_reply_text.replace('\\[', '').replace('\\]', '').replace('\\frac', '').replace('\\eta', 'η').replace('\\', '')
         
-        # --- BOLD TEXT & FORMATTING FIX ---
-        clean_reply = raw_reply_text.replace('\\[', '').replace('\\]', '').replace('\\frac', '').replace('\\eta', 'η').replace('\\', '')
+        # Double star (**) ko Single star (*) me badalna taaki Telegram usko BOLD kare
+        reply_text = reply_text.replace('**', '*')
         
-        # OpenAI ke '**' ko Telegram ke '*' me badalna (Taki text sahi se BOLD ho)
-        clean_reply = clean_reply.replace('**', '*')
-        
-        # Faltu ke '###' aur '####' ko hatana
-        clean_reply = clean_reply.replace('#### ', '').replace('### ', '').replace('## ', '')
-        # ----------------------------------
-        
-        # Send long messages in chunks safely
-        if len(clean_reply) > 4000:
-             for chunk in split_text(clean_reply):
+        # Faltu ke ### hatana
+        reply_text = reply_text.replace('#### ', '').replace('### ', '').replace('## ', '')
+        # ----------------------------------------------------
+
+        # Long message handler (for long queries)
+        if len(reply_text) > 4000:
+             chunks = split_text(reply_text)
+             for chunk in chunks:
                 await update.message.reply_text(chunk, parse_mode='Markdown')
         else:
             try:
-                await update.message.reply_text(clean_reply, parse_mode='Markdown')
+                await update.message.reply_text(reply_text, parse_mode='Markdown')
             except Exception:
-                await update.message.reply_text(clean_reply)
+                await update.message.reply_text(reply_text)
                 
     except Exception as e:
-        print(f"API Error: {e}")
-        await update.message.reply_text(f"⚠️ R&D Server Error. Please wait: `{str(e)}`", parse_mode='Markdown')
+        error_msg = f"⚠️ API Error:\n`{str(e)}`"
+        await update.message.reply_text(error_msg, parse_mode='Markdown')
+        print(f"Error detail: {e}")
+        
     finally:
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
 
 def main():
     global client
-    print("🔄 Initializing Advanced R&D EV Bot...", flush=True)
-
-    if not TELEGRAM_BOT_TOKEN or not OPENROUTER_API_KEY:
-        print("❌ FATAL ERROR: API Keys missing!", flush=True)
-        sys.exit(1)
+    print("🔄 Bot start ho raha hai...", flush=True)
 
     try:
+        # OpenRouter Setup
         client = AsyncOpenAI(
             api_key=OPENROUTER_API_KEY,
             base_url="https://openrouter.ai/api/v1",
@@ -154,18 +166,20 @@ def main():
             }
         )
 
+        # 1. Start Flask Dummy Server (Render ke liye)
         threading.Thread(target=run_flask, daemon=True).start()
-        print("✅ Keep-Alive Web Server started!", flush=True)
 
+        # 2. Asyncio Event Loop Fix (Render crash fix)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
+        # 3. Start Telegram Bot
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
         application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("clear", clear_memory))
+        application.add_handler(CommandHandler("clear", clear_memory)) 
         application.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle_message))
         
-        print("🚀 ADVANCED R&D BOT IS LIVE NOW!", flush=True)
+        print("🚀 EV Telegram Bot is running! (Creator: Rahul Kumar Raj)")
         application.run_polling()
         
     except Exception as e:
@@ -174,4 +188,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
