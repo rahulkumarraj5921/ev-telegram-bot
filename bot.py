@@ -10,16 +10,16 @@ from openai import AsyncOpenAI
 from telegram import Update, constants
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# ⚠️ APNI ASLI KEYS (Aapki di hui keys)
-TELEGRAM_BOT_TOKEN = "8632551535:AAEgv13wUvwnX_mN4lAcdjgpZSFy8AAhBFM"  
-OPENROUTER_API_KEY = "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" 
+# 🔒 SECURE WAY: Ab keys direct code me nahi hain! (Render se auto-fetch hongi)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # --- RENDER WEB SERVER (Taki bot 24x7 chalta rahe) ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "✅ EV Tech Scholar Bot is Live and Running on Render!"
+    return "✅ EV Tech Scholar Bot is Live and Secured on Render!"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
@@ -29,7 +29,7 @@ def run_flask():
 user_sessions = {}
 client = None
 
-# 🧠 ADVANCED SYSTEM INSTRUCTIONS (Aapka original Diploma level prompt)
+# 🧠 ADVANCED SYSTEM INSTRUCTIONS (Diploma level prompt)
 system_instruction = """
 Your Role: You are a Senior EV Engineering Professor and Industry Expert. 
 Creator/Identity Rule: Agar koi aapse puche ki "tumhe kisne banaya hai", "tumhare developer kaun hain", ya "tumhara baap kaun hai", toh hamesha garv se yahi reply dena: "मुझे Rahul Kumar Raj (Government Polytechnic Nawada) ने बनाया है!"
@@ -51,7 +51,7 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-# 🎓 PREMIUM WELCOME MESSAGE (Aapka banaya hua)
+# 🎓 PREMIUM WELCOME MESSAGE
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
         "🎓 *EV-Tech Scholar Bot में आपका स्वागत है!* ⚙️🔋\n\n"
@@ -68,14 +68,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(welcome_text, parse_mode='Markdown')
 
-# Memory clear karne ke liye command
 async def clear_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id in user_sessions:
         del user_sessions[chat_id]
     await update.message.reply_text("🧹 Session memory clear कर दी गई है! चलिए कोई नया टॉपिक शुरू करते हैं।")
 
-# Message handler logic
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     default_vision_prompt = "Provide a comprehensive technical engineering analysis of this image suitable for a Diploma student. Identify components, explain functions, or diagnose errors if possible."
@@ -83,11 +81,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_chat_action(chat_id=chat_id, action='typing')
 
-    # Naya session banayein agar pehli baar message aaya hai
     if chat_id not in user_sessions:
         user_sessions[chat_id] = [{"role": "system", "content": system_instruction}]
 
-    # ⚠️ MEMORY LIMIT LOGIC
     if len(user_sessions[chat_id]) > 15:
         del user_sessions[chat_id][1:3]
 
@@ -110,7 +106,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             user_sessions[chat_id].append({"role": "user", "content": user_text})
             
-        # Aapki settings: Temperature 0.8, Penalty 0.5
         response = await client.chat.completions.create(
             model="openai/gpt-4o-mini", 
             messages=user_sessions[chat_id],
@@ -123,15 +118,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # --- TELEGRAM FORMATTING FIX (Bold text ke liye) ---
         reply_text = raw_reply_text.replace('\\[', '').replace('\\]', '').replace('\\frac', '').replace('\\eta', 'η').replace('\\', '')
-        
-        # Double star (**) ko Single star (*) me badalna taaki Telegram usko BOLD kare
         reply_text = reply_text.replace('**', '*')
-        
-        # Faltu ke ### hatana
         reply_text = reply_text.replace('#### ', '').replace('### ', '').replace('## ', '')
         # ----------------------------------------------------
 
-        # Long message handler (for long queries)
         if len(reply_text) > 4000:
              chunks = split_text(reply_text)
              for chunk in chunks:
@@ -155,8 +145,12 @@ def main():
     global client
     print("🔄 Bot start ho raha hai...", flush=True)
 
+    # Security Check: Agar keys Render me nahi milengi, toh bot crash karke batayega
+    if not TELEGRAM_BOT_TOKEN or not OPENROUTER_API_KEY:
+        print("❌ FATAL ERROR: API Keys missing! Render Environment Variables check karein.", flush=True)
+        sys.exit(1)
+
     try:
-        # OpenRouter Setup
         client = AsyncOpenAI(
             api_key=OPENROUTER_API_KEY,
             base_url="https://openrouter.ai/api/v1",
@@ -166,20 +160,17 @@ def main():
             }
         )
 
-        # 1. Start Flask Dummy Server (Render ke liye)
         threading.Thread(target=run_flask, daemon=True).start()
 
-        # 2. Asyncio Event Loop Fix (Render crash fix)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        # 3. Start Telegram Bot
         application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("clear", clear_memory)) 
         application.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle_message))
         
-        print("🚀 EV Telegram Bot is running! (Creator: Rahul Kumar Raj)")
+        print("🚀 SECURE EV BOT IS LIVE NOW! (Creator: Rahul Kumar Raj)")
         application.run_polling()
         
     except Exception as e:
@@ -188,3 +179,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
